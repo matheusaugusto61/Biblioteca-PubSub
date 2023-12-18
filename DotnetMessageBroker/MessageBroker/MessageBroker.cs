@@ -2,6 +2,7 @@
 using DotnetMessageBroker.MessageBroker.Interface;
 using DotnetMessageBroker.Offset.Interface;
 using DotnetMessageBroker.Offset;
+using System.Text.RegularExpressions;
 
 namespace DotnetMessageBroker.MessageBroker;
 
@@ -33,6 +34,9 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <param name="message">Mensagem a ser publicada.</param>
     public void Publish(string topic, T message)
     {
+        CheckIfTopicIsValid(topic);
+        CheckIfMessageIsValid(message);
+
         EnsureTopicExists(topic);
 
         _queueMessages[topic].Enqueue(message);
@@ -47,6 +51,8 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <param name="groupId">Identificador do grupo que será inscrito no tópico.</param>
     public void Subscribe(string topic, string groupId, bool readAllMessages = true)
     {
+        CheckIfTopicAndGroupIsValid(topic, groupId);
+
         _interestedTopics.Add(topic);
         EnsureOffsetExists(topic, groupId);
 
@@ -75,10 +81,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <exception cref="ArgumentNullException"></exception>
     public void ClearMessagesByGroup(string topic, string groupId)
     {
-        if (topic == null)
-            throw new ArgumentNullException(nameof(topic), "Topic cannot be null.");
-        if (!groupId.Any())
-            throw new ArgumentNullException(nameof(groupId), "GroupId cannot be null.");
+        CheckIfTopicAndGroupIsValid(topic, groupId);
 
         _offsetTracker.ClearOffsetsByGroup(topic, groupId);
     }
@@ -90,8 +93,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <exception cref="ArgumentNullException"></exception>
     public void ClearMessages(string topic)
     {
-        if (topic == null)
-            throw new ArgumentNullException(nameof(topic), "Topic cannot be null.");
+        CheckIfTopicIsValid(topic);
 
         if (_allMessages.ContainsKey(topic))
         {
@@ -173,8 +175,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
         while (_queueMessages[topic].Count > 0)
         {
             var message = _queueMessages[topic].Dequeue();
-            offset++;
-            _offsetTracker.SetOffset(topic, groupId, offset);
+            _offsetTracker.SetOffset(topic, groupId, ++offset);
             OnMessageReceived(topic, groupId, message);
         }
     }
@@ -195,8 +196,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
 
         _allMessages[topic].Add(message);
 
-        
-
         foreach (var groupId in _offsetTracker.ListGroupsInTopic(topic))
         {
             int offset = _offsetTracker.GetOffset(topic, groupId);
@@ -204,6 +203,27 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
             _offsetTracker.SetOffset(topic, groupId, ++offset);
 
         }
+    }
+
+
+    private void CheckIfTopicIsValid(string topic)
+    {
+        if (!topic.Any())
+            throw new ArgumentNullException(nameof(topic), MessageBrokerConstants.TopicCannotBeEmpty);
+    }
+
+    private void CheckIfTopicAndGroupIsValid(string topic, string groupId)
+    {
+        if (!topic.Any())
+            throw new ArgumentNullException(nameof(topic), MessageBrokerConstants.TopicCannotBeEmpty);
+        if (!groupId.Any())
+            throw new ArgumentNullException(nameof(groupId), MessageBrokerConstants.GroupCannotBeEmpty);
+    }
+
+    private void CheckIfMessageIsValid(T message)
+    {
+        if (message == null)
+            throw new ArgumentNullException(nameof(message), MessageBrokerConstants.MessageCannotBeNull);
     }
 
     /// <summary>

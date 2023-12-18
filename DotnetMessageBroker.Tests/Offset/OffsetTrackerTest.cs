@@ -99,7 +99,7 @@ namespace DotnetMessageBroker.Offset.Tests
             offsetTracker.SetOffset(topic, "Group1", 5);
             offsetTracker.SetOffset(topic, "Group2", 10);
 
-            var groups = offsetTracker.ListGroupsInTopic(topic);
+            var groups = offsetTracker.GetAllGroupsInTopic(topic);
 
             Assert.Equal(2, groups.Count);
             Assert.Contains("Group1", groups);

@@ -11,6 +11,9 @@ namespace DotnetMessageBroker.Offset
             Offsets = new Dictionary<string, Dictionary<string, int>>();
         }
 
+        /// <summary>
+        ///     Retorna Offset do grupo em um determinado tópico.
+        /// </summary>
         public int GetOffset(string topic, string groupId)
         {
             if (Offsets.ContainsKey(topic) && Offsets[topic].ContainsKey(groupId))
@@ -21,11 +24,8 @@ namespace DotnetMessageBroker.Offset
         }
 
         /// <summary>
-        ///     Método para setar 
+        ///     Define o offset do grupo em um determinado tópico.
         /// </summary>
-        /// <param name="topic"></param>
-        /// <param name="groupId"></param>
-        /// <param name="offset"></param>
         public void SetOffset(string topic, string groupId, int offset = 0)
         {
             if (!Offsets.ContainsKey(topic))
@@ -37,10 +37,8 @@ namespace DotnetMessageBroker.Offset
         }
 
         /// <summary>
-        ///     Método para verificar se existe algum offset para aquele tópico informado
+        ///     Verifica se existe algum offset para aquele tópico informado.
         /// </summary>
-        /// <param name="topic"></param>
-        /// <returns></returns>
         public bool HasOffset(string topic)
         {
             if (Offsets.ContainsKey(topic))
@@ -52,11 +50,8 @@ namespace DotnetMessageBroker.Offset
         }
 
         /// <summary>
-        ///     Método para verificar se existe um offset para aquele grupo e topico informados
+        ///     Verifica se existe um offset para aquele grupo e topico informados.
         /// </summary>
-        /// <param name="topic"></param>
-        /// <param name="groupId"></param>
-        /// <returns></returns>
         public bool HasOffsetByGroup(string topic, string groupId)
         {
             if (HasOffset(topic) && Offsets[topic].ContainsKey(groupId))
@@ -67,24 +62,36 @@ namespace DotnetMessageBroker.Offset
             return false;
         }
 
+        /// <summary>
+        ///     Apaga todos os offsets que existem para determinado tópico.
+        /// </summary>
         public void ClearOffsets(string topic)
         {
             if (HasOffset(topic))
                 Offsets.Remove(topic);
         }
 
+        /// <summary>
+        ///     Reinicia o offset de um grupo para um determinado tópico.
+        /// </summary>
         public void ClearOffsetsByGroup(string topic, string groupId)
         {
             if (HasOffsetByGroup(topic, groupId))
                 Offsets[topic].Remove(groupId);
         }
 
+        /// <summary>
+        ///     Retorna positivo caso o grupo informado seja o unico que possui offset em um determinado tópico.
+        /// </summary>
         public bool SingleGroupInTopic(string topic, string groupId)
         {
             return HasOffsetByGroup(topic, groupId) && Offsets[topic].Count == 1;
         }
 
-        public Dictionary<string, int>.KeyCollection ListGroupsInTopic(string topic)
+        /// <summary>
+        ///     Retorna todos os grupos com seus offsets que existem para aquele tópico.
+        /// </summary>
+        public Dictionary<string, int>.KeyCollection GetAllGroupsInTopic(string topic)
         {
             return Offsets[topic].Keys;
         }

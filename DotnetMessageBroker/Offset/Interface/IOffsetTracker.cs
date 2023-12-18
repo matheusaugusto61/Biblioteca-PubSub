@@ -9,6 +9,6 @@
         void ClearOffsets(string topic);
         void ClearOffsetsByGroup(string topic, string groupId);
         bool SingleGroupInTopic(string topic, string groupId);
-        Dictionary<string, int>.KeyCollection ListGroupsInTopic(string topic);
+        Dictionary<string, int>.KeyCollection GetAllGroupsInTopic(string topic);
     }
 }

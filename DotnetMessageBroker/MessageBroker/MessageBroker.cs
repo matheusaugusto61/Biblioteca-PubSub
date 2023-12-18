@@ -30,8 +30,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Publica uma mensagem em um tópico específico.
     /// </summary>
-    /// <param name="topic">Tópico onde a mensagem será publicada.</param>
-    /// <param name="message">Mensagem a ser publicada.</param>
+    /// <exception cref="ArgumentNullException"></exception>
     public void Publish(string topic, T message)
     {
         CheckIfTopicIsValid(topic);
@@ -47,8 +46,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Inscreve um grupo em um tópico específico, permitindo o recebimento de mensagens disponíveis no tópico.
     /// </summary>
-    /// <param name="topic">Tópico no qual o grupo será inscrito.</param>
-    /// <param name="groupId">Identificador do grupo que será inscrito no tópico.</param>
+    /// <exception cref="ArgumentNullException"></exception>
     public void Subscribe(string topic, string groupId, bool readAllMessages = true)
     {
         CheckIfTopicAndGroupIsValid(topic, groupId);
@@ -65,8 +63,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Carrega o histórico de mensagens disponíveis para um grupo que acabou de se inscrever em um tópico.
     /// </summary>
-    /// <param name="topic">Tópico para o qual o histórico de mensagens será carregado.</param>
-    /// <param name="groupId">Identificador do grupo para o qual o histórico será carregado.</param>
     public void LoadHistoryForQueue(string topic, string groupId)
     {
         EnsureTopicExists(topic);
@@ -76,8 +72,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Limpa o controle de index de onde determinado grupo estava na leitura das mensagens da fila naquele tópico 
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
     /// <exception cref="ArgumentNullException"></exception>
     public void ClearMessagesByGroup(string topic, string groupId)
     {
@@ -89,7 +83,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Limpa todas as mensagens que já foram executadas por determinada fila em determinado tópico.
     /// </summary>
-    /// <param name="topic"></param>
     /// <exception cref="ArgumentNullException"></exception>
     public void ClearMessages(string topic)
     {
@@ -106,8 +99,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Limpa mensagens de um grupo e apaga o topico caso não tenha mais grupos nele.
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
     public void Unsubscribe(string topic, string groupId)
     {
         if (_offsetTracker.SingleGroupInTopic(topic, groupId))
@@ -119,7 +110,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Garante que a fila e o historico de mensagens de um determinado tópico exista.
     /// </summary>
-    /// <param name="topic"></param>
     private void EnsureTopicExists(string topic)
     {
         if (!_allMessages.ContainsKey(topic))
@@ -132,8 +122,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Garante que o offset de um grupo para determinado tópico exista.
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
     private void EnsureOffsetExists(string topic, string groupId)
     {
         if (!_offsetTracker.HasOffsetByGroup(topic, groupId))
@@ -143,8 +131,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Faz a iteração das mensagens de uma fila para determinado grupo a partir do offset do mesmo.
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
     private void LoadMessagesIntoQueue(string topic, string groupId)
     {
         int offset = _offsetTracker.GetOffset(topic, groupId);
@@ -159,8 +145,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Notifica os inscritos de um determinado tópico e grupo que existem mensagens a serem processadas.
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
     private void NotifySubscribers(string topic, string groupId)
     {
         if (!_interestedTopics.Contains(topic))
@@ -183,7 +167,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Notifica todos os grupos inscritos em um determinado tópico sobre a existência de uma mensagem a ser processada.
     /// </summary>
-    /// <param name="topic">Tópico que possui mensagens a serem processadas.</param>
     private void NotifyAllSubscribers(string topic)
     {
         var message = _queueMessages[topic].Dequeue();
@@ -196,7 +179,7 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
 
         _allMessages[topic].Add(message);
 
-        foreach (var groupId in _offsetTracker.ListGroupsInTopic(topic))
+        foreach (var groupId in _offsetTracker.GetAllGroupsInTopic(topic))
         {
             int offset = _offsetTracker.GetOffset(topic, groupId);
             OnMessageReceived(topic, groupId, message);
@@ -204,7 +187,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
 
         }
     }
-
 
     private void CheckIfTopicIsValid(string topic)
     {
@@ -229,9 +211,6 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     /// <summary>
     ///     Dispara um evento notificando os inscritos que uma mensagem foi recebida em um determinado tópico e grupo.
     /// </summary>
-    /// <param name="topic"></param>
-    /// <param name="groupId"></param>
-    /// <param name="message"></param>
     protected virtual void OnMessageReceived(string topic, string groupId, T message)
     {
         MessageReceived?.Invoke(this, new MessageReceivedEventArgs<T>(topic, groupId, message));

@@ -47,15 +47,14 @@ public class MessageBroker<T> : IMessageBroker, IPublisher<T>, ISubscriber
     ///     Inscreve um grupo em um tópico específico, permitindo o recebimento de mensagens disponíveis no tópico.
     /// </summary>
     /// <exception cref="ArgumentNullException"></exception>
-    public void Subscribe(string topic, string groupId, bool readAllMessages = true)
+    public void Subscribe(string topic, string groupId)
     {
         CheckIfTopicAndGroupIsValid(topic, groupId);
 
         _interestedTopics.Add(topic);
         EnsureOffsetExists(topic, groupId);
 
-        if (readAllMessages)
-            LoadHistoryForQueue(topic, groupId);
+        LoadHistoryForQueue(topic, groupId);
 
         NotifySubscribers(topic, groupId);
     }

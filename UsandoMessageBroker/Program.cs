@@ -1,36 +1,19 @@
 ﻿using DotnetMessageBroker.MessageBroker;
 
-var pubSub = new MessageBroker<string>();
+var messageBroker = new MessageBroker<string>();
 
-pubSub.MessageReceived += (sender, args) =>
+messageBroker.MessageReceived += (sender, args) =>
 {
-    Console.WriteLine($"Mensagem recebida no tópico '{args.Topic}' Group {args.GroupId}: {args.Message}");
+    Console.WriteLine($"Mensagem processada no tópico '{args.Topic}' Grupo {args.GroupId}: {args.Message}");
 };
 
-pubSub.Subscribe("topicA", "group1");
-pubSub.Subscribe("topicB", "group1");
+string topic = "exemplo";
+string message1 = "Mensagem 1";
 
-pubSub.Publish("topicA", $"Mensagem para o tópico A");
+messageBroker.Publish(topic, message1);
 
+messageBroker.Subscribe("exemplo", "processEmail");
+messageBroker.Subscribe("exemplo", "processWhatsapp");
 
-pubSub.Publish("topicB", $"Mensagem para o tópico B");
-
-pubSub.Subscribe("topicA", "group1");
-
-pubSub.Publish("topicA", $"Mensagem para o tópico A");
-
-pubSub.Subscribe("topicA", "group1");
-
-pubSub.Subscribe("topicA", "group2");
-pubSub.Subscribe("topicA", "group3");
-
-pubSub.Subscribe("topicA", "group2");
-
-pubSub.Subscribe("topicB", "group2");
-pubSub.Subscribe("topicB", "group2");
-
-pubSub.Publish("topicA", $"Mensagem para o tópico A especial");
 
 Console.ReadKey();
-
-
